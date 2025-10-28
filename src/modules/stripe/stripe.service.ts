@@ -11,12 +11,19 @@ export class StripeService implements OnModuleInit {
 
   onModuleInit() {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+    const stripeWebhookSecret = this.configService.get<string>(
+      'STRIPE_WEBHOOK_SECRET',
+    );
     if (!stripeSecretKey) {
       throw new Error(
         'STRIPE_SECRET_KEY is not configured. Please set it in your environment variables.',
       );
     }
-
+    if (!stripeWebhookSecret) {
+      throw new Error(
+        'STRIPE_WEBHOOK_SECRET is not configured. Please set it in your environment variables.',
+      );
+    }
     this.stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2025-09-30.clover',
     });

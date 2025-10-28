@@ -11,7 +11,6 @@ A reusable NestJS module for managing Stripe payment methods (cards) with full C
 - ✅ Automatic Stripe customer creation
 - ✅ Database storage of card metadata
 - ✅ Comprehensive error handling
-- ✅ Swagger/OpenAPI documentation
 - ✅ Standardized API response format
 - ✅ Reusable serializer utility
 - ✅ Admin endpoint for all cards

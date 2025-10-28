@@ -23,4 +23,6 @@ export enum STRIPE_ERRORS {
   CUSTOMER_ID_REQUIRED = 'Customer ID is required',
   PAYMENT_METHOD_ID_REQUIRED = 'Payment method ID is required',
   DUPLICATE_CARD = 'A card with the same fingerprint already exists',
+  WEBHOOK_SIGNATURE_VERIFICATION_FAILED = 'Webhook signature verification failed',
+  WEBHOOK_PROCESSING_FAILED = 'Webhook processing failed',
 }
