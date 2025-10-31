@@ -41,7 +41,32 @@ export class WebhookService {
 
   /**
    * Handle checkout session completed event
-   * TODO: Implement your checkout completion logic
+   *
+   * TODO: Implement your payment fulfillment logic here:
+   *
+   * For authenticated users:
+   * - Grant access to purchased items/features
+   * - Update order status in your database
+   * - Send confirmation email
+   * - Log transaction
+   *
+   * For guest payments:
+   * - Use session.customer_email to identify guest
+   * - Check session.metadata for order/product info
+   * - Send confirmation email to guest
+   * - Process fulfillment based on metadata
+   *
+   * Example:
+   * const session = event.data.object as Stripe.Checkout.Session;
+   * const paymentIntent = session.payment_intent;
+   * const customerEmail = session.customer_email;
+   * const metadata = session.metadata;
+   *
+   * // Your fulfillment logic here
+   *
+   * NOTE: This webhook is the source of truth for payment processing.
+   * The verify-session endpoint in PaymentController provides immediate UX feedback,
+   * but webhook ensures reliable processing even if user closes browser.
    */
   async handleCheckoutSessionCompleted(event: Stripe.Event) {}
 

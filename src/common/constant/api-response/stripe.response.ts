@@ -12,6 +12,11 @@ export enum STRIPE_SUCCESS {
   INVOICE_RETRIEVED = 'Invoice retrieved successfully',
   INVOICE_PAID = 'Invoice paid successfully',
   INVOICE_FINALIZED = 'Invoice finalized successfully',
+  PAYMENT_INTENT_CREATED = 'Payment intent created successfully',
+  PAYMENT_INTENT_RETRIEVED = 'Payment intent retrieved successfully',
+  CHECKOUT_SESSION_CREATED = 'Checkout session created successfully',
+  SESSION_VERIFIED = 'Session verified successfully',
+  PAYMENT_SUCCEEDED = 'Payment completed successfully',
 }
 
 export enum STRIPE_ERRORS {
@@ -37,4 +42,10 @@ export enum STRIPE_ERRORS {
   INVOICE_ALREADY_PAID = 'Invoice is already paid',
   INVOICE_NOT_FINALIZED = 'Invoice is not in open status',
   INVOICE_FINALIZATION_FAILED = 'Failed to finalize invoice',
+  PAYMENT_INTENT_CREATION_FAILED = 'Failed to create payment intent',
+  CHECKOUT_SESSION_CREATION_FAILED = 'Failed to create checkout session',
+  PAYMENT_INTENT_NOT_FOUND = 'Payment intent not found',
+  SESSION_NOT_FOUND = 'Checkout session not found',
+  GUEST_EMAIL_REQUIRED = 'Guest email is required for unauthenticated payments',
+  INVALID_AMOUNT = 'Amount must be at least 50 cents',
 }
