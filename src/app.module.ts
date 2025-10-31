@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { StripeModule } from './modules/stripe/stripe.module';
 import { CardModule } from './modules/stripe/card/card.module';
 import { WebhookModule } from './modules/stripe/webhook/webhook.module';
+import { InvoiceModule } from './modules/stripe/invoice/invoice.module';
 import { UserModule } from './modules/user/user.module';
 
 /**
@@ -31,6 +32,7 @@ import { UserModule } from './modules/user/user.module';
     StripeModule,
     CardModule,
     WebhookModule,
+    InvoiceModule,
     UserModule, // Temporary for testing only
   ],
   controllers: [AppController],

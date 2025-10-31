@@ -7,6 +7,11 @@ export enum STRIPE_SUCCESS {
   PAYMENT_METHOD_ATTACHED = 'Payment method attached successfully',
   PAYMENT_METHOD_DETACHED = 'Payment method detached successfully',
   CUSTOMER_UPDATED = 'Customer updated successfully',
+  INVOICES_RETRIEVED = 'Invoices retrieved successfully',
+  INVOICE_CREATED = 'Invoice created successfully',
+  INVOICE_RETRIEVED = 'Invoice retrieved successfully',
+  INVOICE_PAID = 'Invoice paid successfully',
+  INVOICE_FINALIZED = 'Invoice finalized successfully',
 }
 
 export enum STRIPE_ERRORS {
@@ -25,4 +30,11 @@ export enum STRIPE_ERRORS {
   DUPLICATE_CARD = 'A card with the same fingerprint already exists',
   WEBHOOK_SIGNATURE_VERIFICATION_FAILED = 'Webhook signature verification failed',
   WEBHOOK_PROCESSING_FAILED = 'Webhook processing failed',
+  INVOICE_CREATION_FAILED = 'Failed to create invoice',
+  INVALID_DATE_RANGE = 'Invalid date range - start date must be before end date',
+  INVOICE_NOT_FOUND = 'Invoice not found',
+  INVOICE_PAYMENT_FAILED = 'Failed to pay invoice',
+  INVOICE_ALREADY_PAID = 'Invoice is already paid',
+  INVOICE_NOT_FINALIZED = 'Invoice is not in open status',
+  INVOICE_FINALIZATION_FAILED = 'Failed to finalize invoice',
 }
