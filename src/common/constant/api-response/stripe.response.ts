@@ -17,6 +17,15 @@ export enum STRIPE_SUCCESS {
   CHECKOUT_SESSION_CREATED = 'Checkout session created successfully',
   SESSION_VERIFIED = 'Session verified successfully',
   PAYMENT_SUCCEEDED = 'Payment completed successfully',
+  SUBSCRIPTION_CREATED = 'Subscription created successfully',
+  SUBSCRIPTION_UPDATED = 'Subscription updated successfully',
+  SUBSCRIPTION_UPGRADED = 'Subscription upgraded successfully',
+  SUBSCRIPTION_DOWNGRADED = 'Subscription downgraded successfully',
+  SUBSCRIPTION_CANCELED = 'Subscription canceled successfully',
+  SUBSCRIPTION_RESUMED = 'Subscription resumed successfully',
+  SUBSCRIPTION_RETRIEVED = 'Subscription retrieved successfully',
+  SUBSCRIPTIONS_RETRIEVED = 'Subscriptions retrieved successfully',
+  PLANS_RETRIEVED = 'Subscription plans retrieved successfully',
 }
 
 export enum STRIPE_ERRORS {
@@ -48,4 +57,13 @@ export enum STRIPE_ERRORS {
   SESSION_NOT_FOUND = 'Checkout session not found',
   GUEST_EMAIL_REQUIRED = 'Guest email is required for unauthenticated payments',
   INVALID_AMOUNT = 'Amount must be at least 50 cents',
+  SUBSCRIPTION_NOT_FOUND = 'Subscription not found',
+  SUBSCRIPTION_ALREADY_EXISTS = 'User already has an active subscription',
+  SUBSCRIPTION_CREATION_FAILED = 'Failed to create subscription',
+  SUBSCRIPTION_UPDATE_FAILED = 'Failed to update subscription',
+  SUBSCRIPTION_CANCEL_FAILED = 'Failed to cancel subscription',
+  NO_ACTIVE_SUBSCRIPTION = 'No active subscription found',
+  PAYMENT_METHOD_REQUIRED = 'Payment method is required for subscription',
+  INVALID_PLAN = 'Invalid subscription plan',
+  CANNOT_DOWNGRADE_TO_SAME_PLAN = 'Cannot downgrade to the same plan',
 }

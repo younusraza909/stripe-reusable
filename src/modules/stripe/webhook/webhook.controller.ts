@@ -50,8 +50,21 @@ export class WebhookController {
         case 'checkout.session.completed':
           await this.webhookService.handleCheckoutSessionCompleted(event);
           break;
+        case 'customer.subscription.created':
+          // TODO: Implement subscription creation handler in SubscriptionService
+          await this.webhookService.handleSubscriptionCreated(event);
+          break;
         case 'customer.subscription.updated':
+          // TODO: Implement subscription update handler in SubscriptionService
           await this.webhookService.handleSubscriptionUpdated(event);
+          break;
+        case 'customer.subscription.deleted':
+          // TODO: Implement subscription deletion handler in SubscriptionService
+          await this.webhookService.handleSubscriptionDeleted(event);
+          break;
+        case 'invoice.payment_succeeded':
+          // TODO: Implement invoice payment success handler in SubscriptionService
+          await this.webhookService.handleInvoicePaymentSucceeded(event);
           break;
         case 'invoice.payment_failed':
           await this.webhookService.handlePaymentFailed(event);

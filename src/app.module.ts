@@ -8,6 +8,7 @@ import { CardModule } from './modules/stripe/card/card.module';
 import { WebhookModule } from './modules/stripe/webhook/webhook.module';
 import { InvoiceModule } from './modules/stripe/invoice/invoice.module';
 import { PaymentModule } from './modules/stripe/payment/payment.module';
+import { SubscriptionModule } from './modules/stripe/subscription/subscription.module';
 import { UserModule } from './modules/user/user.module';
 
 /**
@@ -35,6 +36,7 @@ import { UserModule } from './modules/user/user.module';
     WebhookModule,
     InvoiceModule,
     PaymentModule,
+    SubscriptionModule,
     UserModule, // Temporary for testing only
   ],
   controllers: [AppController],

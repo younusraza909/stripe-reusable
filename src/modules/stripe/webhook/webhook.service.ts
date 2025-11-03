@@ -68,13 +68,70 @@ export class WebhookService {
    * The verify-session endpoint in PaymentController provides immediate UX feedback,
    * but webhook ensures reliable processing even if user closes browser.
    */
-  async handleCheckoutSessionCompleted(event: Stripe.Event) {}
+  async handleCheckoutSessionCompleted(event: Stripe.Event) {
+    const session = event.data.object as Stripe.Checkout.Session;
+
+    // Log subscription checkout completion
+    if (session.mode === 'subscription') {
+      this.logger.log(
+        `Subscription checkout completed: session ${session.id}, subscription ${session.subscription}`,
+      );
+      // NOTE: For subscription checkouts, the subscription will also trigger customer.subscription.created
+      // Use handleSubscriptionCreated for subscription-specific logic
+    }
+
+    // TODO: Implement your checkout completion fulfillment logic here
+  }
+
+  /**
+   * Handle subscription created event
+   * TODO: Implement in SubscriptionService
+   *
+   * const subscription = event.data.object as Stripe.Subscription;
+   * - Find user by stripeCustomerId from subscription.customer
+   * - Find subscription plan by priceId from subscription.items.data[0].price.id
+   * - Create user_subscription record with status=ACTIVE
+   * - Set isCurrent=true, deactivate old subscriptions
+   * - Store payment method last4 if available
+   */
+  async handleSubscriptionCreated(event: Stripe.Event) {}
 
   /**
    * Handle subscription updated event
-   * TODO: Implement your subscription update logic
+   * TODO: Implement in SubscriptionService
+   *
+   * const subscription = event.data.object as Stripe.Subscription;
+   * - Find user_subscription by stripeSubscriptionId
+   * - Sync status changes (ACTIVE, PAST_DUE, CANCELED)
+   * - Handle schedule phase changes (apply pending subscription)
+   * - Update currentPeriodEnd, payment method details
+   * - If canceled_at_period_end changed, update canceledAt
    */
   async handleSubscriptionUpdated(event: Stripe.Event) {}
+
+  /**
+   * Handle subscription deleted event
+   * TODO: Implement in SubscriptionService
+   *
+   * const subscription = event.data.object as Stripe.Subscription;
+   * - Find user_subscription by stripeSubscriptionId
+   * - Update status to CANCELED
+   * - Set isCurrent=false
+   * - Store canceledAt timestamp
+   */
+  async handleSubscriptionDeleted(event: Stripe.Event) {}
+
+  /**
+   * Handle invoice payment succeeded event
+   * TODO: Implement in SubscriptionService
+   *
+   * const invoice = event.data.object as Stripe.Invoice;
+   * - Find user_subscription by subscription ID from invoice
+   * - Confirm subscription is ACTIVE if was INCOMPLETE
+   * - Update invoiceId and paymentMethodLast4
+   * - Store payment confirmation details
+   */
+  async handleInvoicePaymentSucceeded(event: Stripe.Event) {}
 
   /**
    * Handle payment failed event
