@@ -1,0 +1,9 @@
+export enum PaypalSubscriptionStatusEnum {
+  APPROVAL_PENDING = 'APPROVAL_PENDING',
+  APPROVED = 'APPROVED',
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  CANCELLED = 'CANCELLED',
+  EXPIRED = 'EXPIRED',
+}
+

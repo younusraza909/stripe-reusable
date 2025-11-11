@@ -17,6 +17,7 @@ async function bootstrap() {
       email: 'younus@geeksofkolachi.com',
       fullName: 'Younus Test User',
       stripeCustomerId: 'cus_TJkuRKVnUJrm5d',
+      paypalPayerId: '5O190127TN364715T',
     });
     console.log('Dummy user created:', dummyUser);
   }

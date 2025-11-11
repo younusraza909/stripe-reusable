@@ -10,6 +10,11 @@ import { InvoiceModule } from './modules/stripe/invoice/invoice.module';
 import { PaymentModule } from './modules/stripe/payment/payment.module';
 import { SubscriptionModule } from './modules/stripe/subscription/subscription.module';
 import { UserModule } from './modules/user/user.module';
+import { PaypalModule } from './modules/paypal/paypal.module';
+import { PaypalPaymentModule } from './modules/paypal/payment/payment.module';
+import { PaypalInvoiceModule } from './modules/paypal/invoice/invoice.module';
+import { PaypalSubscriptionModule } from './modules/paypal/subscription/subscription.module';
+import { PaypalWebhookModule } from './modules/paypal/webhook/webhook.module';
 
 /**
  * Main application module.
@@ -37,6 +42,11 @@ import { UserModule } from './modules/user/user.module';
     InvoiceModule,
     PaymentModule,
     SubscriptionModule,
+    PaypalModule,
+    PaypalPaymentModule,
+    PaypalInvoiceModule,
+    PaypalSubscriptionModule,
+    PaypalWebhookModule,
     UserModule, // Temporary for testing only
   ],
   controllers: [AppController],

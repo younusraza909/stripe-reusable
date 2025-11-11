@@ -42,4 +42,11 @@ export class UserService {
   ): Promise<User> {
     return this.update(id, { stripeCustomerId });
   }
+
+  async updatePaypalPayerId(
+    id: number,
+    paypalPayerId: string,
+  ): Promise<User> {
+    return this.update(id, { paypalPayerId });
+  }
 }
