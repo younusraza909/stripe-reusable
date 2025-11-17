@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
-import { User } from '../user/entities/user.entity';
+import { User } from '../user/schemas/user.schema';
 
 @Injectable()
 export class StripeService implements OnModuleInit {
@@ -25,7 +25,7 @@ export class StripeService implements OnModuleInit {
       );
     }
     this.stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2025-09-30.clover',
+      apiVersion: '2025-10-29.clover',
     });
   }
 
@@ -57,7 +57,7 @@ export class StripeService implements OnModuleInit {
       name: user.fullName,
       metadata: {
         // add metadata to the customer
-        userId: user.id.toString(),
+        userId: (user as any)._id?.toString() || user.email,
       },
     });
 

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User, UserDocument } from './schemas/user.schema';
 
 /**
  * This User module is for testing only and will not be published in the library.
@@ -10,43 +10,48 @@ import { User } from './entities/user.entity';
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
   ) {}
 
-  async findById(id: number): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id } });
+  async findById(id: string): Promise<UserDocument> {
+    const user = await this.userModel.findById(id);
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     return user;
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { email } });
+  async findByEmail(email: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ email });
   }
 
-  async create(userData: Partial<User>): Promise<User> {
-    const user = this.userRepository.create(userData);
-    return this.userRepository.save(user);
+  async create(userData: Partial<User>): Promise<UserDocument> {
+    const user = new this.userModel(userData);
+    return user.save();
   }
 
-  async update(id: number, updateData: Partial<User>): Promise<User> {
-    await this.userRepository.update(id, updateData);
-    return this.findById(id);
+  async update(id: string, updateData: Partial<User>): Promise<UserDocument> {
+    const user = await this.userModel.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
   }
 
   async updateStripeCustomerId(
-    id: number,
+    id: string,
     stripeCustomerId: string,
-  ): Promise<User> {
+  ): Promise<UserDocument> {
     return this.update(id, { stripeCustomerId });
   }
 
   async updatePaypalPayerId(
-    id: number,
+    id: string,
     paypalPayerId: string,
-  ): Promise<User> {
+  ): Promise<UserDocument> {
     return this.update(id, { paypalPayerId });
   }
 }

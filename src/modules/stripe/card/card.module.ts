@@ -1,7 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import { StripeModule } from '../stripe.module';
-import { Card } from './entities/card.entity';
+import { Card, CardSchema } from './schemas/card.schema';
 import { CardService } from './card.service';
 import { CardController } from './card.controller';
 import { UserModule } from 'src/modules/user/user.module';
@@ -12,7 +12,7 @@ import { UserModule } from 'src/modules/user/user.module';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Card]),
+    MongooseModule.forFeature([{ name: Card.name, schema: CardSchema }]),
     StripeModule,
     forwardRef(() => UserModule), // TODO: Replace with your actual User module
   ],

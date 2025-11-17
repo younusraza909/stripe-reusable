@@ -28,7 +28,7 @@ export class PaymentService {
    */
   async createPaymentIntent(
     dto: CreatePaymentIntentDto,
-    userId?: number,
+    userId?: string,
   ): Promise<SuccessResponse<Stripe.PaymentIntent>> {
     const stripe = this.stripeService.getStripeClient();
 
@@ -82,7 +82,7 @@ export class PaymentService {
    */
   async createCheckoutSession(
     dto: CreateCheckoutSessionDto,
-    userId?: number,
+    userId?: string,
   ): Promise<SuccessResponse<Stripe.Checkout.Session>> {
     const stripe = this.stripeService.getStripeClient();
 

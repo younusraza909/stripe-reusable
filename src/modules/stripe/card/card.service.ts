@@ -4,14 +4,13 @@ import {
   BadRequestException,
   HttpStatus,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { StripeService } from '../stripe.service';
-import { Card } from './entities/card.entity';
+import { Card, CardDocument } from './schemas/card.schema';
 import { AddCardDto } from './dto/add-card.dto';
 import Stripe from 'stripe';
 import { UserService } from 'src/modules/user/user.service';
-import { User } from 'src/modules/user/entities/user.entity';
 import {
   SerializeHttpResponse,
   SerializeHttpError,
@@ -25,23 +24,23 @@ import {
 @Injectable()
 export class CardService {
   constructor(
-    @InjectRepository(Card)
-    private readonly cardRepository: Repository<Card>,
+    @InjectModel(Card.name)
+    private readonly cardModel: Model<CardDocument>,
     private readonly stripeService: StripeService,
     private readonly userService: UserService,
   ) {}
 
   async addCard(
-    userId: number,
+    userId: string,
     addCardDto: AddCardDto,
-  ): Promise<SuccessResponse<Card>> {
+  ): Promise<SuccessResponse<CardDocument>> {
     const user = await this.userService.findById(userId);
 
     // TODO: Ensure your User entity has a stripeCustomerId field (nullable string)
     if (!user.stripeCustomerId) {
       // Create or get Stripe customer
       const stripeCustomer =
-        await this.stripeService.getOrCreateStripeCustomer(user);
+        await this.stripeService.getOrCreateStripeCustomer(user as any);
       user.stripeCustomerId = stripeCustomer.id;
       await this.userService.updateStripeCustomerId(userId, stripeCustomer.id);
     }
@@ -86,9 +85,7 @@ export class CardService {
     }
 
     // Check if a card with the same fingerprint already exists for this user
-    const existingCards = await this.cardRepository.find({
-      where: { userId },
-    });
+    const existingCards = await this.cardModel.find({ userId });
 
     // Get all payment methods for this user to check fingerprints
     const userPaymentMethods = await stripe.paymentMethods.list({
@@ -112,7 +109,7 @@ export class CardService {
     const isDefault = existingCards.length === 0;
 
     // Create card record in database
-    const cardEntity = this.cardRepository.create({
+    const cardEntity = new this.cardModel({
       userId,
       stripePaymentMethodId: addCardDto.paymentMethodId,
       last4: card.last4,
@@ -122,7 +119,7 @@ export class CardService {
       isDefault,
     });
 
-    const savedCard = await this.cardRepository.save(cardEntity);
+    const savedCard = await cardEntity.save();
 
     // If this is the default card, update Stripe customer
     if (isDefault) {
@@ -140,11 +137,11 @@ export class CardService {
     );
   }
 
-  async getCards(userId: number): Promise<SuccessResponse<Card[]>> {
-    const cards = await this.cardRepository.find({
-      where: { userId },
-      order: { isDefault: 'DESC', createdAt: 'DESC' },
-    });
+  async getCards(userId: string): Promise<SuccessResponse<CardDocument[]>> {
+    const cards = await this.cardModel
+      .find({ userId })
+      .sort({ isDefault: -1, createdAt: -1 })
+      .exec();
 
     return SerializeHttpResponse(
       cards,
@@ -153,11 +150,12 @@ export class CardService {
     );
   }
 
-  async getAllCards(): Promise<SuccessResponse<Card[]>> {
-    const cards = await this.cardRepository.find({
-      order: { userId: 'ASC', isDefault: 'DESC', createdAt: 'DESC' },
-      relations: ['user'],
-    });
+  async getAllCards(): Promise<SuccessResponse<CardDocument[]>> {
+    const cards = await this.cardModel
+      .find()
+      .populate('userId')
+      .sort({ userId: 1, isDefault: -1, createdAt: -1 })
+      .exec();
 
     return SerializeHttpResponse(
       cards,
@@ -167,11 +165,12 @@ export class CardService {
   }
 
   async deleteCard(
-    userId: number,
-    cardId: number,
+    userId: string,
+    cardId: string,
   ): Promise<SuccessResponse<null>> {
-    const card = await this.cardRepository.findOne({
-      where: { id: cardId, userId },
+    const card = await this.cardModel.findOne({
+      _id: cardId,
+      userId,
     });
 
     if (!card) {
@@ -216,18 +215,18 @@ export class CardService {
     // If this was the default card, find another card to make default
     if (card.isDefault) {
       // Get remaining cards for this user (excluding the one being deleted)
-      const remainingCards = await this.cardRepository.find({
-        where: { userId },
-      });
+      const remainingCards = await this.cardModel.find({ userId });
 
       // Filter out the card being deleted
-      const otherCards = remainingCards.filter((c) => c.id !== cardId);
+      const otherCards = remainingCards.filter(
+        (c) => (c._id as any).toString() !== cardId,
+      );
 
       if (otherCards.length > 0) {
         // Set the first remaining card as default
         const newDefaultCard = otherCards[0];
         newDefaultCard.isDefault = true;
-        await this.cardRepository.save(newDefaultCard);
+        await newDefaultCard.save();
 
         // Update Stripe customer default payment method
         if (user.stripeCustomerId) {
@@ -264,7 +263,7 @@ export class CardService {
     }
 
     // Delete card from database
-    await this.cardRepository.remove(card);
+    await this.cardModel.findByIdAndDelete(cardId);
     return SerializeHttpResponse(
       null,
       HttpStatus.OK,
@@ -273,11 +272,12 @@ export class CardService {
   }
 
   async setDefaultCard(
-    userId: number,
-    cardId: number,
-  ): Promise<SuccessResponse<Card>> {
-    const card = await this.cardRepository.findOne({
-      where: { id: cardId, userId },
+    userId: string,
+    cardId: string,
+  ): Promise<SuccessResponse<CardDocument>> {
+    const card = await this.cardModel.findOne({
+      _id: cardId,
+      userId,
     });
 
     if (!card) {
@@ -294,11 +294,11 @@ export class CardService {
     const stripe = this.stripeService.getStripeClient();
 
     // Update all cards to not be default
-    await this.cardRepository.update({ userId }, { isDefault: false });
+    await this.cardModel.updateMany({ userId }, { isDefault: false });
 
     // Set this card as default
     card.isDefault = true;
-    const updatedCard = await this.cardRepository.save(card);
+    const updatedCard = await card.save();
 
     // Update Stripe customer default payment method
     if (user.stripeCustomerId) {

@@ -1,9 +1,15 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import { StripeModule } from '../stripe.module';
 import { CardModule } from '../card/card.module';
-import { Subscription } from './entities/subscription.entity';
-import { UserSubscription } from './entities/user-subscription.entity';
+import {
+  Subscription,
+  SubscriptionSchema,
+} from './schemas/subscription.schema';
+import {
+  UserSubscription,
+  UserSubscriptionSchema,
+} from './schemas/user-subscription.schema';
 import { SubscriptionService } from './subscription.service';
 import { SubscriptionController } from './subscription.controller';
 import { UserModule } from 'src/modules/user/user.module';
@@ -21,7 +27,10 @@ import { UserModule } from 'src/modules/user/user.module';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Subscription, UserSubscription]),
+    MongooseModule.forFeature([
+      { name: Subscription.name, schema: SubscriptionSchema },
+      { name: UserSubscription.name, schema: UserSubscriptionSchema },
+    ]),
     StripeModule,
     CardModule,
     forwardRef(() => UserModule),

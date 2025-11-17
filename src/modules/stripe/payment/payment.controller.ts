@@ -65,7 +65,7 @@ export class PaymentController {
   ): Promise<SuccessResponse<Stripe.PaymentIntent>> {
     // TODO: Replace with your actual user ID extraction from JWT token
     // Example: const userId = req.user?.id;
-    const userId = 1; // Hardcoded for testing - replace with req.user?.id for optional auth
+    const userId = '1'; // Hardcoded for testing - replace with req.user?.id for optional auth
 
     // Guest payment validation
     // For guest payments (no auth), guestEmail is required
@@ -119,7 +119,7 @@ export class PaymentController {
   ): Promise<SuccessResponse<Stripe.Checkout.Session>> {
     // TODO: Replace with your actual user ID extraction from JWT token
     // Example: const userId = req.user?.id;
-    const userId = 1; // Hardcoded for testing - replace with req.user?.id for optional auth
+    const userId = '1'; // Hardcoded for testing - replace with req.user?.id for optional auth
 
     // Guest payment validation
     // For guest payments (no auth), guestEmail is required

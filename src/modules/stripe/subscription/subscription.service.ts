@@ -1,9 +1,15 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { StripeService } from '../stripe.service';
-import { Subscription } from './entities/subscription.entity';
-import { UserSubscription } from './entities/user-subscription.entity';
+import {
+  Subscription,
+  SubscriptionDocument,
+} from './schemas/subscription.schema';
+import {
+  UserSubscription,
+  UserSubscriptionDocument,
+} from './schemas/user-subscription.schema';
 import { CreateSubscriptionCheckoutDto } from './dto/create-subscription-checkout.dto';
 import { CreateSubscriptionIntentDto } from './dto/create-subscription-intent.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
@@ -41,10 +47,10 @@ import {
 @Injectable()
 export class SubscriptionService {
   constructor(
-    @InjectRepository(Subscription)
-    private readonly subscriptionRepository: Repository<Subscription>,
-    @InjectRepository(UserSubscription)
-    private readonly userSubscriptionRepository: Repository<UserSubscription>,
+    @InjectModel(Subscription.name)
+    private readonly subscriptionModel: Model<SubscriptionDocument>,
+    @InjectModel(UserSubscription.name)
+    private readonly userSubscriptionModel: Model<UserSubscriptionDocument>,
     private readonly stripeService: StripeService,
     private readonly userService: UserService,
     private readonly cardService: CardService,
@@ -55,7 +61,7 @@ export class SubscriptionService {
    * Stripe handles card collection and payment method setup
    */
   async createSubscriptionCheckout(
-    userId: number,
+    userId: string,
     dto: CreateSubscriptionCheckoutDto,
   ): Promise<SuccessResponse<Stripe.Checkout.Session>> {
     const stripe = this.stripeService.getStripeClient();
@@ -71,8 +77,9 @@ export class SubscriptionService {
     }
 
     // Check if user already has an active subscription
-    const existingSubscription = await this.userSubscriptionRepository.findOne({
-      where: { userId, isCurrent: true },
+    const existingSubscription = await this.userSubscriptionModel.findOne({
+      userId,
+      isCurrent: true,
     });
 
     if (existingSubscription) {
@@ -84,8 +91,8 @@ export class SubscriptionService {
     }
 
     // Find subscription plan in database
-    const plan = await this.subscriptionRepository.findOne({
-      where: { stripePriceId: dto.priceId },
+    const plan = await this.subscriptionModel.findOne({
+      stripePriceId: dto.priceId,
     });
 
     if (!plan) {
@@ -145,7 +152,7 @@ export class SubscriptionService {
    * Requires user to have a payment method already saved
    */
   async createSubscriptionIntent(
-    userId: number,
+    userId: string,
     dto: CreateSubscriptionIntentDto,
   ): Promise<SuccessResponse<Stripe.Subscription>> {
     const stripe = this.stripeService.getStripeClient();
@@ -161,8 +168,9 @@ export class SubscriptionService {
     }
 
     // Check if user already has an active subscription
-    const existingSubscription = await this.userSubscriptionRepository.findOne({
-      where: { userId, isCurrent: true },
+    const existingSubscription = await this.userSubscriptionModel.findOne({
+      userId,
+      isCurrent: true,
     });
 
     if (existingSubscription) {
@@ -193,8 +201,8 @@ export class SubscriptionService {
     }
 
     // Find subscription plan in database
-    const plan = await this.subscriptionRepository.findOne({
-      where: { stripePriceId: dto.priceId },
+    const plan = await this.subscriptionModel.findOne({
+      stripePriceId: dto.priceId,
     });
 
     if (!plan) {
@@ -223,9 +231,9 @@ export class SubscriptionService {
 
       // For Intent flow, subscription is created IMMEDIATELY
       // We can create user_subscription record right away since we have the subscription object
-      const userSubscription = this.userSubscriptionRepository.create({
+      const userSubscription = new this.userSubscriptionModel({
         userId,
-        subscriptionId: plan.id,
+        subscriptionId: plan._id,
         stripeSubscriptionId: subscription.id,
         status: (subscription as any).status as SubscriptionStatusEnum,
         currentPeriodEnd: new Date(
@@ -233,7 +241,7 @@ export class SubscriptionService {
         ),
         isCurrent: true,
       });
-      await this.userSubscriptionRepository.save(userSubscription);
+      await userSubscription.save();
 
       return SerializeHttpResponse(
         subscription,
@@ -253,12 +261,13 @@ export class SubscriptionService {
    * Get user's current active subscription
    */
   async getUserSubscription(
-    userId: number,
-  ): Promise<SuccessResponse<UserSubscription>> {
-    const subscription = await this.userSubscriptionRepository.findOne({
-      where: { userId, isCurrent: true },
-      relations: ['subscription', 'pendingSubscription'],
-    });
+    userId: string,
+  ): Promise<SuccessResponse<UserSubscriptionDocument>> {
+    const subscription = await this.userSubscriptionModel
+      .findOne({ userId, isCurrent: true })
+      .populate('subscriptionId')
+      .populate('pendingSubscriptionId')
+      .exec();
 
     if (!subscription) {
       return SerializeHttpError(
@@ -279,13 +288,14 @@ export class SubscriptionService {
    * Get all subscription history for user
    */
   async getAllSubscriptions(
-    userId: number,
-  ): Promise<SuccessResponse<UserSubscription[]>> {
-    const subscriptions = await this.userSubscriptionRepository.find({
-      where: { userId },
-      relations: ['subscription', 'pendingSubscription'],
-      order: { createdAt: 'DESC' },
-    });
+    userId: string,
+  ): Promise<SuccessResponse<UserSubscriptionDocument[]>> {
+    const subscriptions = await this.userSubscriptionModel
+      .find({ userId })
+      .populate('subscriptionId')
+      .populate('pendingSubscriptionId')
+      .sort({ createdAt: -1 })
+      .exec();
 
     return SerializeHttpResponse(
       subscriptions,
@@ -297,11 +307,11 @@ export class SubscriptionService {
   /**
    * Get all available subscription plans
    */
-  async getAvailablePlans(): Promise<SuccessResponse<Subscription[]>> {
-    const plans = await this.subscriptionRepository.find({
-      where: { isActive: true },
-      order: { amount: 'ASC' },
-    });
+  async getAvailablePlans(): Promise<SuccessResponse<SubscriptionDocument[]>> {
+    const plans = await this.subscriptionModel
+      .find({ isActive: true })
+      .sort({ amount: 1 })
+      .exec();
 
     return SerializeHttpResponse(
       plans,
@@ -314,16 +324,16 @@ export class SubscriptionService {
    * Upgrade subscription immediately with proration
    */
   async upgradeSubscription(
-    userId: number,
+    userId: string,
     dto: UpdateSubscriptionDto,
   ): Promise<SuccessResponse<Stripe.Subscription>> {
     const stripe = this.stripeService.getStripeClient();
 
     // Get current active subscription
-    const userSubscription = await this.userSubscriptionRepository.findOne({
-      where: { userId, isCurrent: true },
-      relations: ['subscription'],
-    });
+    const userSubscription = await this.userSubscriptionModel
+      .findOne({ userId, isCurrent: true })
+      .populate('subscriptionId')
+      .exec();
 
     if (!userSubscription) {
       return SerializeHttpError(
@@ -334,8 +344,8 @@ export class SubscriptionService {
     }
 
     // Find new subscription plan
-    const newPlan = await this.subscriptionRepository.findOne({
-      where: { stripePriceId: dto.newPriceId },
+    const newPlan = await this.subscriptionModel.findOne({
+      stripePriceId: dto.newPriceId,
     });
 
     if (!newPlan) {
@@ -347,7 +357,10 @@ export class SubscriptionService {
     }
 
     // Check if downgrading to same plan
-    if (userSubscription.subscriptionId === newPlan.id) {
+    if (
+      (userSubscription.subscriptionId as any).toString() ===
+      (newPlan._id as any).toString()
+    ) {
       return SerializeHttpError(
         null,
         HttpStatus.BAD_REQUEST,
@@ -376,13 +389,13 @@ export class SubscriptionService {
       );
 
       // Update user subscription record
-      userSubscription.subscriptionId = newPlan.id;
+      userSubscription.subscriptionId = newPlan._id as any;
       userSubscription.status = (updatedSub as any)
         .status as SubscriptionStatusEnum;
       userSubscription.currentPeriodEnd = new Date(
         (updatedSub as any).current_period_end * 1000,
       );
-      await this.userSubscriptionRepository.save(userSubscription);
+      await userSubscription.save();
 
       return SerializeHttpResponse(
         updatedSub,
@@ -402,16 +415,16 @@ export class SubscriptionService {
    * Downgrade subscription - effective from next billing cycle
    */
   async downgradeSubscription(
-    userId: number,
+    userId: string,
     dto: UpdateSubscriptionDto,
   ): Promise<SuccessResponse<Stripe.Subscription>> {
     const stripe = this.stripeService.getStripeClient();
 
     // Get current active subscription
-    const userSubscription = await this.userSubscriptionRepository.findOne({
-      where: { userId, isCurrent: true },
-      relations: ['subscription'],
-    });
+    const userSubscription = await this.userSubscriptionModel
+      .findOne({ userId, isCurrent: true })
+      .populate('subscriptionId')
+      .exec();
 
     if (!userSubscription) {
       return SerializeHttpError(
@@ -422,8 +435,8 @@ export class SubscriptionService {
     }
 
     // Find new subscription plan
-    const newPlan = await this.subscriptionRepository.findOne({
-      where: { stripePriceId: dto.newPriceId },
+    const newPlan = await this.subscriptionModel.findOne({
+      stripePriceId: dto.newPriceId,
     });
 
     if (!newPlan) {
@@ -435,7 +448,10 @@ export class SubscriptionService {
     }
 
     // Check if downgrading to same plan
-    if (userSubscription.subscriptionId === newPlan.id) {
+    if (
+      (userSubscription.subscriptionId as any).toString() ===
+      (newPlan._id as any).toString()
+    ) {
       return SerializeHttpError(
         null,
         HttpStatus.BAD_REQUEST,
@@ -477,12 +493,12 @@ export class SubscriptionService {
       });
 
       // Update user subscription record with pending subscription
-      userSubscription.pendingSubscriptionId = newPlan.id;
+      userSubscription.pendingSubscriptionId = newPlan._id as any;
       userSubscription.scheduledChangeAt = new Date(
         (currentSub as any).current_period_end * 1000,
       );
       userSubscription.stripeSubscriptionScheduleId = schedule.id;
-      await this.userSubscriptionRepository.save(userSubscription);
+      await userSubscription.save();
 
       return SerializeHttpResponse(
         currentSub,
@@ -502,14 +518,15 @@ export class SubscriptionService {
    * Cancel subscription - effective from next billing cycle by default
    */
   async cancelSubscription(
-    userId: number,
+    userId: string,
     dto: CancelSubscriptionDto,
   ): Promise<SuccessResponse<Stripe.Subscription>> {
     const stripe = this.stripeService.getStripeClient();
 
     // Get current active subscription
-    const userSubscription = await this.userSubscriptionRepository.findOne({
-      where: { userId, isCurrent: true },
+    const userSubscription = await this.userSubscriptionModel.findOne({
+      userId,
+      isCurrent: true,
     });
 
     if (!userSubscription) {
@@ -535,7 +552,7 @@ export class SubscriptionService {
         userSubscription.canceledAt = new Date();
         userSubscription.status = (updatedSub as any)
           .status as SubscriptionStatusEnum;
-        await this.userSubscriptionRepository.save(userSubscription);
+        await userSubscription.save();
 
         return SerializeHttpResponse(
           updatedSub,
@@ -551,7 +568,7 @@ export class SubscriptionService {
         userSubscription.status = SubscriptionStatusEnum.CANCELED;
         userSubscription.isCurrent = false;
         userSubscription.canceledAt = new Date();
-        await this.userSubscriptionRepository.save(userSubscription);
+        await userSubscription.save();
 
         return SerializeHttpResponse(
           canceledSub,
@@ -572,13 +589,14 @@ export class SubscriptionService {
    * Resume a cancelled subscription
    */
   async resumeSubscription(
-    userId: number,
+    userId: string,
   ): Promise<SuccessResponse<Stripe.Subscription>> {
     const stripe = this.stripeService.getStripeClient();
 
     // Get current subscription
-    const userSubscription = await this.userSubscriptionRepository.findOne({
-      where: { userId, isCurrent: true },
+    const userSubscription = await this.userSubscriptionModel.findOne({
+      userId,
+      isCurrent: true,
     });
 
     if (!userSubscription) {
@@ -605,11 +623,11 @@ export class SubscriptionService {
         },
       );
 
-      userSubscription.canceledAt = null;
+      userSubscription.canceledAt = undefined;
       userSubscription.resumesAt = new Date();
       userSubscription.status = (updatedSub as any)
         .status as SubscriptionStatusEnum;
-      await this.userSubscriptionRepository.save(userSubscription);
+      await userSubscription.save();
 
       return SerializeHttpResponse(
         updatedSub,

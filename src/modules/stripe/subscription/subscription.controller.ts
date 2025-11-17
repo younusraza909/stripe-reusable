@@ -56,7 +56,7 @@ export class SubscriptionController {
   ): Promise<SuccessResponse<Stripe.Checkout.Session>> {
     // TODO: Replace with your actual user ID extraction from JWT token
     // Example: const userId = req.user.id;
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
 
     // SECURITY: Subscriptions are automatically associated with the authenticated user
     // This prevents users from creating subscriptions for other users
@@ -82,7 +82,7 @@ export class SubscriptionController {
   ): Promise<SuccessResponse<Stripe.Subscription>> {
     // TODO: Replace with your actual user ID extraction from JWT token
     // Example: const userId = req.user.id;
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
 
     // SECURITY: Subscriptions are automatically associated with the authenticated user
     // This prevents users from creating subscriptions for other users
@@ -100,7 +100,7 @@ export class SubscriptionController {
   async getUserSubscription(@Request() req: any) {
     // TODO: Replace with your actual user ID extraction from JWT token
     // Example: const userId = req.user.id;
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
 
     // SECURITY: Only returns subscription belonging to the authenticated user
     return this.subscriptionService.getUserSubscription(userId);
@@ -114,7 +114,7 @@ export class SubscriptionController {
   async getAllSubscriptions(@Request() req: any) {
     // TODO: Replace with your actual user ID extraction from JWT token
     // Example: const userId = req.user.id;
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
 
     // SECURITY: Only returns subscriptions belonging to the authenticated user
     return this.subscriptionService.getAllSubscriptions(userId);
@@ -144,7 +144,7 @@ export class SubscriptionController {
   ) {
     // TODO: Replace with your actual user ID extraction from JWT token
     // Example: const userId = req.user.id;
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
 
     // SECURITY: Users can only upgrade their own subscriptions
     return this.subscriptionService.upgradeSubscription(
@@ -168,7 +168,7 @@ export class SubscriptionController {
   ) {
     // TODO: Replace with your actual user ID extraction from JWT token
     // Example: const userId = req.user.id;
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
 
     // SECURITY: Users can only downgrade their own subscriptions
     return this.subscriptionService.downgradeSubscription(
@@ -192,7 +192,7 @@ export class SubscriptionController {
   ) {
     // TODO: Replace with your actual user ID extraction from JWT token
     // Example: const userId = req.user.id;
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
 
     // SECURITY: Users can only cancel their own subscriptions
     return this.subscriptionService.cancelSubscription(
@@ -213,7 +213,7 @@ export class SubscriptionController {
   async resumeSubscription(@Request() req: any) {
     // TODO: Replace with your actual user ID extraction from JWT token
     // Example: const userId = req.user.id;
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
 
     // SECURITY: Users can only resume their own subscriptions
     return this.subscriptionService.resumeSubscription(userId);

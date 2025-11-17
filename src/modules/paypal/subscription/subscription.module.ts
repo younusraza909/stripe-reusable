@@ -1,8 +1,14 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { MongooseModule } from '@nestjs/mongoose';
 import { PaypalModule } from '../paypal.module';
-import { PaypalSubscription } from './entities/subscription.entity';
-import { PaypalUserSubscription } from './entities/user-subscription.entity';
+import {
+  PaypalSubscription,
+  PaypalSubscriptionSchema,
+} from './schemas/subscription.schema';
+import {
+  PaypalUserSubscription,
+  PaypalUserSubscriptionSchema,
+} from './schemas/user-subscription.schema';
 import { PaypalSubscriptionService } from './subscription.service';
 import { PaypalSubscriptionController } from './subscription.controller';
 import { UserModule } from 'src/modules/user/user.module';
@@ -13,7 +19,13 @@ import { UserModule } from 'src/modules/user/user.module';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PaypalSubscription, PaypalUserSubscription]),
+    MongooseModule.forFeature([
+      { name: PaypalSubscription.name, schema: PaypalSubscriptionSchema },
+      {
+        name: PaypalUserSubscription.name,
+        schema: PaypalUserSubscriptionSchema,
+      },
+    ]),
     PaypalModule,
     forwardRef(() => UserModule),
   ],

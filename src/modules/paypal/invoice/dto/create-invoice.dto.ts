@@ -12,12 +12,11 @@ import { Type } from 'class-transformer';
 export class CreateInvoiceDto {
   @ApiProperty({
     description: 'User ID to create invoice for',
-    example: 1,
+    example: '507f1f77bcf86cd799439011',
   })
-  @IsNumber()
+  @IsString()
   @IsNotEmpty()
-  @Type(() => Number)
-  customerId: number;
+  customerId: string;
 
   @ApiProperty({
     description: 'Amount in cents (minimum 100 = 1.00)',

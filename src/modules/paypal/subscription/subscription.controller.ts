@@ -40,7 +40,7 @@ export class PaypalSubscriptionController {
   ): Promise<SuccessResponse<Record<string, any>>> {
     // TODO: Replace with your actual user ID extraction from JWT token
     // Example: const userId = req.user.id;
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
 
     return this.subscriptionService.createSubscriptionCheckout(userId, dto);
   }
@@ -55,21 +55,21 @@ export class PaypalSubscriptionController {
     @Body() dto: CreateSubscriptionIntentDto,
     @Request() req: any,
   ): Promise<SuccessResponse<Record<string, any>>> {
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
     return this.subscriptionService.createSubscriptionIntent(userId, dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get current PayPal subscription for user' })
   async getUserSubscription(@Request() req: any) {
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
     return this.subscriptionService.getUserSubscription(userId);
   }
 
   @Get('history')
   @ApiOperation({ summary: 'Get PayPal subscription history for user' })
   async getAllSubscriptions(@Request() req: any) {
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
     return this.subscriptionService.getAllSubscriptions(userId);
   }
 
@@ -89,7 +89,7 @@ export class PaypalSubscriptionController {
     @Body() dto: UpdateSubscriptionDto,
     @Request() req: any,
   ) {
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
     return this.subscriptionService.reviseSubscription(userId, dto);
   }
 
@@ -101,7 +101,7 @@ export class PaypalSubscriptionController {
     @Body() dto: CancelSubscriptionDto,
     @Request() req: any,
   ) {
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
     return this.subscriptionService.cancelSubscription(userId, dto);
   }
 
@@ -113,7 +113,7 @@ export class PaypalSubscriptionController {
     @Body() dto: ResumeSubscriptionDto,
     @Request() req: any,
   ) {
-    const userId = 1; // Hardcoded for testing - replace with actual user ID from JWT token
+    const userId = '1'; // Hardcoded for testing - replace with actual user ID from JWT token
     return this.subscriptionService.resumeSubscription(userId, dto);
   }
 

@@ -8,12 +8,15 @@ async function bootstrap() {
   // Create dummy user for testing
   const userService = app.get(UserService);
   try {
-    const existingUser = await userService.findById(1);
-    console.log('User with ID 1 already exists');
+    const existingUser = await userService.findByEmail(
+      'younus@geeksofkolachi.com',
+    );
+    if (existingUser) {
+      console.log('User already exists');
+    }
   } catch (error) {
     // User doesn't exist, create it
     const dummyUser = await userService.create({
-      id: 1,
       email: 'younus@geeksofkolachi.com',
       fullName: 'Younus Test User',
       stripeCustomerId: 'cus_TJkuRKVnUJrm5d',

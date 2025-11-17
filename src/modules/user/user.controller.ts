@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserService } from './user.service';
-import { User } from './entities/user.entity';
+import { UserDocument } from './schemas/user.schema';
 
 /**
  * This User module is for testing only and will not be published in the library.
@@ -14,9 +14,9 @@ export class UserController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID (for testing only)' })
-  @ApiResponse({ status: 200, description: 'User found', type: User })
+  @ApiResponse({ status: 200, description: 'User found' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async getUser(@Param('id', ParseIntPipe) id: number): Promise<User> {
+  async getUser(@Param('id') id: string): Promise<UserDocument> {
     return this.userService.findById(id);
   }
 
@@ -25,21 +25,24 @@ export class UserController {
   @ApiResponse({
     status: 201,
     description: 'User created successfully',
-    type: User,
   })
-  async seedUser(): Promise<User> {
+  async seedUser(): Promise<UserDocument> {
     try {
       // Check if user already exists
-      const existingUser = await this.userService.findById(1);
-      return existingUser;
+      const existingUser = await this.userService.findByEmail(
+        'younus@geeksofkolachi.com',
+      );
+      if (existingUser) {
+        return existingUser;
+      }
     } catch (error) {
-      // Create dummy user
-      return this.userService.create({
-        id: 1,
-        email: 'younus@geeksofkolachi.com',
-        fullName: 'Younus Test User',
-        stripeCustomerId: 'cus_TJkuRKVnUJrm5d',
-      });
+      // Continue to create
     }
+    // Create dummy user
+    return this.userService.create({
+      email: 'younus@geeksofkolachi.com',
+      fullName: 'Younus Test User',
+      stripeCustomerId: 'cus_TJkuRKVnUJrm5d',
+    });
   }
 }

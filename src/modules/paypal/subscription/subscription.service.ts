@@ -1,9 +1,15 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { PaypalService } from '../paypal.service';
-import { PaypalSubscription } from './entities/subscription.entity';
-import { PaypalUserSubscription } from './entities/user-subscription.entity';
+import {
+  PaypalSubscription,
+  PaypalSubscriptionDocument,
+} from './schemas/subscription.schema';
+import {
+  PaypalUserSubscription,
+  PaypalUserSubscriptionDocument,
+} from './schemas/user-subscription.schema';
 import { CreateSubscriptionCheckoutDto } from './dto/create-subscription-checkout.dto';
 import { CreateSubscriptionIntentDto } from './dto/create-subscription-intent.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
@@ -26,10 +32,10 @@ type PaypalSubscriptionResponse = Record<string, any>;
 @Injectable()
 export class PaypalSubscriptionService {
   constructor(
-    @InjectRepository(PaypalSubscription)
-    private readonly subscriptionRepository: Repository<PaypalSubscription>,
-    @InjectRepository(PaypalUserSubscription)
-    private readonly userSubscriptionRepository: Repository<PaypalUserSubscription>,
+    @InjectModel(PaypalSubscription.name)
+    private readonly subscriptionModel: Model<PaypalSubscriptionDocument>,
+    @InjectModel(PaypalUserSubscription.name)
+    private readonly userSubscriptionModel: Model<PaypalUserSubscriptionDocument>,
     private readonly paypalService: PaypalService,
     private readonly userService: UserService,
   ) {}
@@ -38,13 +44,14 @@ export class PaypalSubscriptionService {
    * Create PayPal subscription using hosted approval flow.
    */
   async createSubscriptionCheckout(
-    userId: number,
+    userId: string,
     dto: CreateSubscriptionCheckoutDto,
   ): Promise<SuccessResponse<PaypalSubscriptionResponse>> {
     const user = await this.userService.findById(userId);
 
-    const existingSubscription = await this.userSubscriptionRepository.findOne({
-      where: { userId, isCurrent: true },
+    const existingSubscription = await this.userSubscriptionModel.findOne({
+      userId,
+      isCurrent: true,
     });
 
     if (existingSubscription) {
@@ -55,8 +62,8 @@ export class PaypalSubscriptionService {
       );
     }
 
-    const plan = await this.subscriptionRepository.findOne({
-      where: { paypalPlanId: dto.planId },
+    const plan = await this.subscriptionModel.findOne({
+      paypalPlanId: dto.planId,
     });
 
     if (!plan) {
@@ -91,14 +98,14 @@ export class PaypalSubscriptionService {
         },
       });
 
-      const userSubscription = this.userSubscriptionRepository.create({
+      const userSubscription = new this.userSubscriptionModel({
         userId,
-        subscriptionId: plan.id,
+        subscriptionId: plan._id,
         paypalSubscriptionId: subscription.id,
         status: PaypalSubscriptionStatusEnum.APPROVAL_PENDING,
         isCurrent: true,
       });
-      await this.userSubscriptionRepository.save(userSubscription);
+      await userSubscription.save();
 
       return SerializeHttpResponse(
         subscription,
@@ -118,7 +125,7 @@ export class PaypalSubscriptionService {
    * PayPal does not support server-side subscription creation without buyer approval.
    */
   async createSubscriptionIntent(
-    _userId: number,
+    _userId: string,
     _dto: CreateSubscriptionIntentDto,
   ): Promise<SuccessResponse<PaypalSubscriptionResponse>> {
     return SerializeHttpError(
@@ -129,12 +136,13 @@ export class PaypalSubscriptionService {
   }
 
   async getUserSubscription(
-    userId: number,
+    userId: string,
   ): Promise<SuccessResponse<PaypalUserSubscription>> {
-    const subscription = await this.userSubscriptionRepository.findOne({
-      where: { userId, isCurrent: true },
-      relations: ['subscription', 'pendingSubscription'],
-    });
+    const subscription = await this.userSubscriptionModel
+      .findOne({ userId, isCurrent: true })
+      .populate('subscriptionId')
+      .populate('pendingSubscriptionId')
+      .exec();
 
     if (!subscription) {
       return SerializeHttpError(
@@ -152,13 +160,14 @@ export class PaypalSubscriptionService {
   }
 
   async getAllSubscriptions(
-    userId: number,
+    userId: string,
   ): Promise<SuccessResponse<PaypalUserSubscription[]>> {
-    const subscriptions = await this.userSubscriptionRepository.find({
-      where: { userId },
-      relations: ['subscription', 'pendingSubscription'],
-      order: { createdAt: 'DESC' },
-    });
+    const subscriptions = await this.userSubscriptionModel
+      .find({ userId })
+      .populate('subscriptionId')
+      .populate('pendingSubscriptionId')
+      .sort({ createdAt: -1 })
+      .exec();
 
     return SerializeHttpResponse(
       subscriptions,
@@ -168,10 +177,10 @@ export class PaypalSubscriptionService {
   }
 
   async getAvailablePlans(): Promise<SuccessResponse<PaypalSubscription[]>> {
-    const plans = await this.subscriptionRepository.find({
-      where: { isActive: true },
-      order: { amount: 'ASC' },
-    });
+    const plans = await this.subscriptionModel
+      .find({ isActive: true })
+      .sort({ amount: 1 })
+      .exec();
 
     return SerializeHttpResponse(
       plans,
@@ -185,11 +194,12 @@ export class PaypalSubscriptionService {
    * PayPal applies the change on the next billing cycle by default.
    */
   async reviseSubscription(
-    userId: number,
+    userId: string,
     dto: UpdateSubscriptionDto,
   ): Promise<SuccessResponse<PaypalSubscriptionResponse>> {
-    const userSubscription = await this.userSubscriptionRepository.findOne({
-      where: { userId, isCurrent: true },
+    const userSubscription = await this.userSubscriptionModel.findOne({
+      userId,
+      isCurrent: true,
     });
 
     if (!userSubscription) {
@@ -200,8 +210,8 @@ export class PaypalSubscriptionService {
       );
     }
 
-    const newPlan = await this.subscriptionRepository.findOne({
-      where: { paypalPlanId: dto.newPlanId },
+    const newPlan = await this.subscriptionModel.findOne({
+      paypalPlanId: dto.newPlanId,
     });
 
     if (!newPlan) {
@@ -224,9 +234,9 @@ export class PaypalSubscriptionService {
         },
       });
 
-      userSubscription.subscriptionId = newPlan.id;
+      userSubscription.subscriptionId = newPlan._id as any;
       userSubscription.status = PaypalSubscriptionStatusEnum.APPROVAL_PENDING;
-      await this.userSubscriptionRepository.save(userSubscription);
+      await userSubscription.save();
 
       return SerializeHttpResponse(
         revised,
@@ -243,11 +253,12 @@ export class PaypalSubscriptionService {
   }
 
   async cancelSubscription(
-    userId: number,
+    userId: string,
     dto: CancelSubscriptionDto,
   ): Promise<SuccessResponse<PaypalSubscriptionResponse>> {
-    const userSubscription = await this.userSubscriptionRepository.findOne({
-      where: { userId, isCurrent: true },
+    const userSubscription = await this.userSubscriptionModel.findOne({
+      userId,
+      isCurrent: true,
     });
 
     if (!userSubscription) {
@@ -270,7 +281,7 @@ export class PaypalSubscriptionService {
       userSubscription.status = PaypalSubscriptionStatusEnum.CANCELLED;
       userSubscription.isCurrent = false;
       userSubscription.canceledAt = new Date();
-      await this.userSubscriptionRepository.save(userSubscription);
+      await userSubscription.save();
 
       return SerializeHttpResponse(
         { id: userSubscription.paypalSubscriptionId },
@@ -287,11 +298,12 @@ export class PaypalSubscriptionService {
   }
 
   async resumeSubscription(
-    userId: number,
+    userId: string,
     _dto?: ResumeSubscriptionDto,
   ): Promise<SuccessResponse<PaypalSubscriptionResponse>> {
-    const userSubscription = await this.userSubscriptionRepository.findOne({
-      where: { userId, isCurrent: true },
+    const userSubscription = await this.userSubscriptionModel.findOne({
+      userId,
+      isCurrent: true,
     });
 
     if (!userSubscription) {
@@ -312,9 +324,9 @@ export class PaypalSubscriptionService {
       });
 
       userSubscription.status = PaypalSubscriptionStatusEnum.ACTIVE;
-      userSubscription.canceledAt = null;
+      userSubscription.canceledAt = undefined;
       userSubscription.resumesAt = new Date();
-      await this.userSubscriptionRepository.save(userSubscription);
+      await userSubscription.save();
 
       return SerializeHttpResponse(
         { id: userSubscription.paypalSubscriptionId },
